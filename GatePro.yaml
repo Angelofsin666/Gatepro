@@ -35,21 +35,21 @@ blueprint:
 
     trigger_auto:
       name: Sensore accensione auto (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: binary_sensor
 
     cancello_remote:
       name: Telecomando cancello (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: remote
 
-    cancello_device_name: # Nuovo input per il nome del dispositivo Broadlink
+    cancello_device_name:
       name: Nome dispositivo Broadlink (es. 'cancello')
-      description: Il nome del dispositivo Broadlink RM Pro se usato (es. 'cancello', se hai broadlink: device: cancello nella conf)
+      description: Il nome del dispositivo Broadlink RM Pro se usato
       default: "cancello"
       selector:
         text:
@@ -62,7 +62,7 @@ blueprint:
 
     allarme:
       name: Pannello allarme (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: alarm_control_panel
@@ -76,7 +76,7 @@ blueprint:
 
     tapparelle:
       name: Tapparelle da gestire (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: cover
@@ -84,7 +84,7 @@ blueprint:
 
     luci_accendere:
       name: Luci da accendere (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: light
@@ -92,7 +92,7 @@ blueprint:
 
     luci_spegnere:
       name: Luci da spegnere (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: light
@@ -100,7 +100,7 @@ blueprint:
 
     automazioni_extra:
       name: Automazioni o script aggiuntivi (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain:
@@ -110,38 +110,35 @@ blueprint:
 
     sensore_porte:
       name: Sensore conteggio porte aperte (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: sensor
-          # Potresti voler specificare device_class: opening per filtraggio migliore
-          # device_class: opening 
 
     sensore_finestre:
       name: Sensore conteggio finestre aperte (opzionale)
-      default: [] # Default a lista vuota per indicare opzionale
+      default: []
       selector:
         entity:
           domain: sensor
-          # device_class: opening 
 
-    notifiche_interattive_dispositivi: # Rinominato per chiarezza
+    notifiche_interattive_dispositivi:
       name: Dispositivi per notifiche interattive
       description: >
         Seleziona uno o più dispositivi (iOS/Android) su cui inviare notifiche personalizzate.
       default: []
       selector:
         device:
-          integration: mobile_app # Filtra solo dispositivi dell'app mobile
+          integration: mobile_app
           multiple: true
 
-    notifiche_interattive_testo: # Rinominato per chiarezza
+    notifiche_interattive_testo:
       name: Messaggio di notifica
       default: "Casa vuota: allarme inserito, tapparelle chiuse, luci gestite."
       selector:
         text: {}
 
-    notifiche_interattive_bottone_titolo: # Rinominato per chiarezza
+    notifiche_interattive_bottone_titolo:
       name: Titolo pulsante notifica (opzionale)
       default: ""
       selector:
@@ -155,13 +152,13 @@ trigger:
 
   - platform: zone
     entity_id: !input tracker_persona
-    zone: zone.home # Potresti voler rendere configurabile anche la zona 'home' se vuoi permettere altre zone.
+    zone: zone.home
     event: enter
     id: rientro
 
   - platform: zone
     entity_id: !input tracker_persona
-    zone: zone.home # Come sopra
+    zone: zone.home
     event: leave
     id: uscita
 
@@ -170,7 +167,7 @@ trigger:
     from: "home"
     to: "not_home"
     for:
-      minutes: 2 # Puoi rendere questo un input se vuoi
+      minutes: 2
     id: nessuno_a_casa
 
 condition: []
@@ -182,70 +179,10 @@ action:
             id:
               - partenza_auto
               - uscita
-          - condition: state # Aggiungi una condizione per la persona principale non a casa
+          - condition: state
             entity_id: !input persona_principale
             state: not_home
         sequence:
-          # Azione Cancello (se selezionato)
-          - if:
-              - "{{ cancello_remote != [] }}"
-            then:
-              - service: remote.send_command
-                target:
-                  entity_id: !input cancello_remote
-                data:
-                  device: !input cancello_device_name # Usa l'input
-                  command: !input cancello_command
-
-          # Azione Allarme (se selezionato)
-          - if:
-              - "{{ allarme != [] }}"
-            then:
-              - service: alarm_control_panel.alarm_arm_away
-                target:
-                  entity_id: !input allarme
-                data:
-                  code: !input codice_allarme
-
-          # Azione Tapparelle (se selezionate)
-          - if:
-              - "{{ tapparelle != [] }}"
-            then:
-              - service: cover.close_cover
-                target:
-                  entity_id: !input tapparelle
-
-          # Azione Luci (se selezionate)
-          - if:
-              - "{{ luci_spegnere != [] }}"
-            then:
-              - service: light.turn_off
-                target:
-                  entity_id: !input luci_spegnere
-
-          - if:
-              - "{{ luci_accendere != [] }}"
-            then:
-              - service: light.turn_on
-                target:
-                  entity_id: !input luci_accendere
-
-          # Azione Automazioni Extra (se selezionate)
-          - if:
-              - "{{ automazioni_extra != [] }}"
-            then:
-              - service: homeassistant.turn_on
-                target:
-                  entity_id: !input automazioni_extra
-
-      - conditions:
-          - condition: trigger
-            id: rientro
-          - condition: state # Aggiungi una condizione per la persona principale a casa
-            entity_id: !input persona_principale
-            state: home
-        sequence:
-          # Azione Cancello (se selezionato)
           - if:
               - "{{ cancello_remote != [] }}"
             then:
@@ -256,59 +193,6 @@ action:
                   device: !input cancello_device_name
                   command: !input cancello_command
 
-          # Azione Tapparelle (se selezionate)
-          - if:
-              - "{{ tapparelle != [] }}"
-            then:
-              - service: cover.open_cover
-                target:
-                  entity_id: !input tapparelle
-
-          # Azione Luci (se selezionate)
-          - if:
-              - "{{ luci_accendere != [] }}"
-            then:
-              - service: light.turn_on
-                target:
-                  entity_id: !input luci_accendere
-
-          # Azione Allarme (se selezionato)
-          - if:
-              - "{{ allarme != [] }}"
-            then:
-              - service: alarm_control_panel.alarm_disarm
-                target:
-                  entity_id: !input allarme
-                data:
-                  code: !input codice_allarme
-
-          # Azione Automazioni Extra (se selezionate)
-          - if:
-              - "{{ automazioni_extra != [] }}"
-            then:
-              - service: homeassistant.turn_on
-                target:
-                  entity_id: !input automazioni_extra
-
-      - conditions:
-          - condition: trigger
-            id: nessuno_a_casa
-          - condition: or # Condizione per sensore porte o se non selezionato
-            conditions:
-              - condition: template
-                value_template: "{{ sensore_porte == [] }}" # Se il sensore porte non è stato selezionato, passa
-              - condition: numeric_state
-                entity_id: !input sensore_porte
-                below: 1
-          - condition: or # Condizione per sensore finestre o se non selezionato
-            conditions:
-              - condition: template
-                value_template: "{{ sensore_finestre == [] }}" # Se il sensore finestre non è stato selezionato, passa
-              - condition: numeric_state
-                entity_id: !input sensore_finestre
-                below: 1
-        sequence:
-          # Azione Allarme (se selezionato)
           - if:
               - "{{ allarme != [] }}"
             then:
@@ -318,7 +202,6 @@ action:
                 data:
                   code: !input codice_allarme
 
-          # Azione Tapparelle (se selezionate)
           - if:
               - "{{ tapparelle != [] }}"
             then:
@@ -326,7 +209,6 @@ action:
                 target:
                   entity_id: !input tapparelle
 
-          # Azione Luci (se selezionate)
           - if:
               - "{{ luci_spegnere != [] }}"
             then:
@@ -341,7 +223,6 @@ action:
                 target:
                   entity_id: !input luci_accendere
 
-          # Azione Automazioni Extra (se selezionate)
           - if:
               - "{{ automazioni_extra != [] }}"
             then:
@@ -349,24 +230,133 @@ action:
                 target:
                   entity_id: !input automazioni_extra
 
-          # Notifiche Interattive (se selezionate)
+      - conditions:
+          - condition: trigger
+            id: rientro
+          - condition: state
+            entity_id: !input persona_principale
+            state: home
+        sequence:
+          - if:
+              - "{{ cancello_remote != [] }}"
+            then:
+              - service: remote.send_command
+                target:
+                  entity_id: !input cancello_remote
+                data:
+                  device: !input cancello_device_name
+                  command: !input cancello_command
+
+          - if:
+              - "{{ tapparelle != [] }}"
+            then:
+              - service: cover.open_cover
+                target:
+                  entity_id: !input tapparelle
+
+          - if:
+              - "{{ luci_accendere != [] }}"
+            then:
+              - service: light.turn_on
+                target:
+                  entity_id: !input luci_accendere
+
+          - if:
+              - "{{ allarme != [] }}"
+            then:
+              - service: alarm_control_panel.alarm_disarm
+                target:
+                  entity_id: !input allarme
+                data:
+                  code: !input codice_allarme
+
+          - if:
+              - "{{ automazioni_extra != [] }}"
+            then:
+              - service: homeassistant.turn_on
+                target:
+                  entity_id: !input automazioni_extra
+
+      - conditions:
+          - condition: trigger
+            id: nessuno_a_casa
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ sensore_porte == [] }}"
+              - condition: numeric_state
+                entity_id: !input sensore_porte
+                below: 1
+          - condition: or
+            conditions:
+              - condition: template
+                value_template: "{{ sensore_finestre == [] }}"
+              - condition: numeric_state
+                entity_id: !input sensore_finestre
+                below: 1
+        sequence:
+          - if:
+              - "{{ allarme != [] }}"
+            then:
+              - service: alarm_control_panel.alarm_arm_away
+                target:
+                  entity_id: !input allarme
+                data:
+                  code: !input codice_allarme
+
+          - if:
+              - "{{ tapparelle != [] }}"
+            then:
+              - service: cover.close_cover
+                target:
+                  entity_id: !input tapparelle
+
+          - if:
+              - "{{ luci_spegnere != [] }}"
+            then:
+              - service: light.turn_off
+                target:
+                  entity_id: !input luci_spegnere
+
+          - if:
+              - "{{ luci_accendere != [] }}"
+            then:
+              - service: light.turn_on
+                target:
+                  entity_id: !input luci_accendere
+
+          - if:
+              - "{{ automazioni_extra != [] }}"
+            then:
+              - service: homeassistant.turn_on
+                target:
+                  entity_id: !input automazioni_extra
+
           - if:
               - "{{ notifiche_interattive_dispositivi != [] }}"
             then:
               - repeat:
                   for_each: !input notifiche_interattive_dispositivi
                   sequence:
-                    - service: notify.mobile_app
-                      data:
-                        target: "{{ repeat.item }}"
-                        title: Casa vuota
-                        message: !input notifiche_interattive_testo
-                        # Aggiungiamo il blocco 'actions' solo se 'notifiche_interattive_bottone_titolo' è stato fornito
-                        {% if notifiche_interattive_bottone_titolo != "" %}
-                        data:
-                          actions:
-                            - action: "custom_home_alarm_action" # Questo è un ID interno dell'azione, non il titolo
-                              title: !input notifiche_interattive_bottone_titolo
-                        {% endif %}
+                    - choose:
+                        - conditions:
+                            - condition: template
+                              value_template: "{{ notifiche_interattive_bottone_titolo != '' }}"
+                          sequence:
+                            - service: notify.mobile_app
+                              data:
+                                target: "{{ repeat.item }}"
+                                title: Casa vuota
+                                message: !input notifiche_interattive_testo
+                                data:
+                                  actions:
+                                    - action: "custom_home_alarm_action"
+                                      title: !input notifiche_interattive_bottone_titolo
+                      default:
+                        - service: notify.mobile_app
+                          data:
+                            target: "{{ repeat.item }}"
+                            title: Casa vuota
+                            message: !input notifiche_interattive_testo
 
 mode: single
