@@ -22,4 +22,16 @@ al rientro, all'uscita o quando nessuno è in casa (es. vacanza o serata fuori).
 3. Crea una nuova automazione da blueprint e configura i parametri
 
 ## Import diretto in Home Assistant
-Usa il link:https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Gatepro/main/gatepro.yaml
+### Importa il Blueprint direttamente in Home Assistant
+
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Gatepro/main/gatepro.yaml" target="_blank">
+    <img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Importa il Blueprint" />
+  </a>
+</p>
+
+---
+
+Oppure copia il link diretto:
+
+`https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Gatepro/main/gatepro.yaml`
