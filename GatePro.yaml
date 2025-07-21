@@ -49,7 +49,7 @@ blueprint:
 
     cancello_device_name:
       name: Nome dispositivo Broadlink (es. 'cancello')
-      description: Il nome del dispositivo Broadlink RM Pro se usato
+      description: Nome del dispositivo Broadlink RM Pro se usato (es. 'cancello')
       default: "cancello"
       selector:
         text:
