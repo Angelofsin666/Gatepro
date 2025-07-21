@@ -1,4 +1,4 @@
-# Gatepro
+e# Gatepro
 🏡 Gate Pro: Controllo Intelligente di Cancello, Allarme e Casa con Notifiche (Rientro/Uscita &amp; Casa Vuota)
 # Blueprint: GatePro 🚪
 
@@ -22,4 +22,4 @@ al rientro, all'uscita o quando nessuno è in casa (es. vacanza o serata fuori).
 3. Crea una nuova automazione da blueprint e configura i parametri
 
 ## Import diretto in Home Assistant
-Usa il link:
+Usa il link:https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Gatepro/main/gatepro.yaml
