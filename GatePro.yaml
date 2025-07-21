@@ -1,0 +1,372 @@
+blueprint:
+  name: Gate Pro
+  description: >
+    Gestisce apertura cancello, allarme, tapparelle, luci e automazioni extra
+    al rientro o all'uscita, e quando nessuno è in casa (es. vacanza, serata fuori).
+    Notifiche interattive supportate (Android/iOS).
+  domain: automation
+  input:
+    persona_principale:
+      name: Persona principale
+      selector:
+        entity:
+          domain: person
+
+    persona_secondaria:
+      name: Persona secondaria
+      selector:
+        entity:
+          domain: person
+
+    persone_da_monitorare:
+      name: Persone da considerare assenti
+      description: >
+        Se tutte queste persone non sono in casa per almeno 2 minuti, si attiva lo scenario "Casa Vuota".
+      selector:
+        entity:
+          domain: person
+          multiple: true
+
+    tracker_persona:
+      name: Tracker GPS della persona principale
+      selector:
+        entity:
+          domain: device_tracker
+
+    trigger_auto:
+      name: Sensore accensione auto (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: binary_sensor
+
+    cancello_remote:
+      name: Telecomando cancello (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: remote
+
+    cancello_device_name: # Nuovo input per il nome del dispositivo Broadlink
+      name: Nome dispositivo Broadlink (es. 'cancello')
+      description: Il nome del dispositivo Broadlink RM Pro se usato (es. 'cancello', se hai broadlink: device: cancello nella conf)
+      default: "cancello"
+      selector:
+        text:
+
+    cancello_command:
+      name: Comando apertura cancello
+      default: apri
+      selector:
+        text: {}
+
+    allarme:
+      name: Pannello allarme (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: alarm_control_panel
+
+    codice_allarme:
+      name: Codice allarme (opzionale)
+      default: ""
+      selector:
+        text:
+          type: password
+
+    tapparelle:
+      name: Tapparelle da gestire (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+
+    luci_accendere:
+      name: Luci da accendere (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: light
+          multiple: true
+
+    luci_spegnere:
+      name: Luci da spegnere (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: light
+          multiple: true
+
+    automazioni_extra:
+      name: Automazioni o script aggiuntivi (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain:
+            - automation
+            - script
+          multiple: true
+
+    sensore_porte:
+      name: Sensore conteggio porte aperte (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: sensor
+          # Potresti voler specificare device_class: opening per filtraggio migliore
+          # device_class: opening 
+
+    sensore_finestre:
+      name: Sensore conteggio finestre aperte (opzionale)
+      default: [] # Default a lista vuota per indicare opzionale
+      selector:
+        entity:
+          domain: sensor
+          # device_class: opening 
+
+    notifiche_interattive_dispositivi: # Rinominato per chiarezza
+      name: Dispositivi per notifiche interattive
+      description: >
+        Seleziona uno o più dispositivi (iOS/Android) su cui inviare notifiche personalizzate.
+      default: []
+      selector:
+        device:
+          integration: mobile_app # Filtra solo dispositivi dell'app mobile
+          multiple: true
+
+    notifiche_interattive_testo: # Rinominato per chiarezza
+      name: Messaggio di notifica
+      default: "Casa vuota: allarme inserito, tapparelle chiuse, luci gestite."
+      selector:
+        text: {}
+
+    notifiche_interattive_bottone_titolo: # Rinominato per chiarezza
+      name: Titolo pulsante notifica (opzionale)
+      default: ""
+      selector:
+        text: {}
+
+trigger:
+  - platform: state
+    entity_id: !input trigger_auto
+    to: "on"
+    id: partenza_auto
+
+  - platform: zone
+    entity_id: !input tracker_persona
+    zone: zone.home # Potresti voler rendere configurabile anche la zona 'home' se vuoi permettere altre zone.
+    event: enter
+    id: rientro
+
+  - platform: zone
+    entity_id: !input tracker_persona
+    zone: zone.home # Come sopra
+    event: leave
+    id: uscita
+
+  - platform: state
+    entity_id: !input persone_da_monitorare
+    from: "home"
+    to: "not_home"
+    for:
+      minutes: 2 # Puoi rendere questo un input se vuoi
+    id: nessuno_a_casa
+
+condition: []
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - partenza_auto
+              - uscita
+          - condition: state # Aggiungi una condizione per la persona principale non a casa
+            entity_id: !input persona_principale
+            state: not_home
+        sequence:
+          # Azione Cancello (se selezionato)
+          - if:
+              - "{{ cancello_remote != [] }}"
+            then:
+              - service: remote.send_command
+                target:
+                  entity_id: !input cancello_remote
+                data:
+                  device: !input cancello_device_name # Usa l'input
+                  command: !input cancello_command
+
+          # Azione Allarme (se selezionato)
+          - if:
+              - "{{ allarme != [] }}"
+            then:
+              - service: alarm_control_panel.alarm_arm_away
+                target:
+                  entity_id: !input allarme
+                data:
+                  code: !input codice_allarme
+
+          # Azione Tapparelle (se selezionate)
+          - if:
+              - "{{ tapparelle != [] }}"
+            then:
+              - service: cover.close_cover
+                target:
+                  entity_id: !input tapparelle
+
+          # Azione Luci (se selezionate)
+          - if:
+              - "{{ luci_spegnere != [] }}"
+            then:
+              - service: light.turn_off
+                target:
+                  entity_id: !input luci_spegnere
+
+          - if:
+              - "{{ luci_accendere != [] }}"
+            then:
+              - service: light.turn_on
+                target:
+                  entity_id: !input luci_accendere
+
+          # Azione Automazioni Extra (se selezionate)
+          - if:
+              - "{{ automazioni_extra != [] }}"
+            then:
+              - service: homeassistant.turn_on
+                target:
+                  entity_id: !input automazioni_extra
+
+      - conditions:
+          - condition: trigger
+            id: rientro
+          - condition: state # Aggiungi una condizione per la persona principale a casa
+            entity_id: !input persona_principale
+            state: home
+        sequence:
+          # Azione Cancello (se selezionato)
+          - if:
+              - "{{ cancello_remote != [] }}"
+            then:
+              - service: remote.send_command
+                target:
+                  entity_id: !input cancello_remote
+                data:
+                  device: !input cancello_device_name
+                  command: !input cancello_command
+
+          # Azione Tapparelle (se selezionate)
+          - if:
+              - "{{ tapparelle != [] }}"
+            then:
+              - service: cover.open_cover
+                target:
+                  entity_id: !input tapparelle
+
+          # Azione Luci (se selezionate)
+          - if:
+              - "{{ luci_accendere != [] }}"
+            then:
+              - service: light.turn_on
+                target:
+                  entity_id: !input luci_accendere
+
+          # Azione Allarme (se selezionato)
+          - if:
+              - "{{ allarme != [] }}"
+            then:
+              - service: alarm_control_panel.alarm_disarm
+                target:
+                  entity_id: !input allarme
+                data:
+                  code: !input codice_allarme
+
+          # Azione Automazioni Extra (se selezionate)
+          - if:
+              - "{{ automazioni_extra != [] }}"
+            then:
+              - service: homeassistant.turn_on
+                target:
+                  entity_id: !input automazioni_extra
+
+      - conditions:
+          - condition: trigger
+            id: nessuno_a_casa
+          - condition: or # Condizione per sensore porte o se non selezionato
+            conditions:
+              - condition: template
+                value_template: "{{ sensore_porte == [] }}" # Se il sensore porte non è stato selezionato, passa
+              - condition: numeric_state
+                entity_id: !input sensore_porte
+                below: 1
+          - condition: or # Condizione per sensore finestre o se non selezionato
+            conditions:
+              - condition: template
+                value_template: "{{ sensore_finestre == [] }}" # Se il sensore finestre non è stato selezionato, passa
+              - condition: numeric_state
+                entity_id: !input sensore_finestre
+                below: 1
+        sequence:
+          # Azione Allarme (se selezionato)
+          - if:
+              - "{{ allarme != [] }}"
+            then:
+              - service: alarm_control_panel.alarm_arm_away
+                target:
+                  entity_id: !input allarme
+                data:
+                  code: !input codice_allarme
+
+          # Azione Tapparelle (se selezionate)
+          - if:
+              - "{{ tapparelle != [] }}"
+            then:
+              - service: cover.close_cover
+                target:
+                  entity_id: !input tapparelle
+
+          # Azione Luci (se selezionate)
+          - if:
+              - "{{ luci_spegnere != [] }}"
+            then:
+              - service: light.turn_off
+                target:
+                  entity_id: !input luci_spegnere
+
+          - if:
+              - "{{ luci_accendere != [] }}"
+            then:
+              - service: light.turn_on
+                target:
+                  entity_id: !input luci_accendere
+
+          # Azione Automazioni Extra (se selezionate)
+          - if:
+              - "{{ automazioni_extra != [] }}"
+            then:
+              - service: homeassistant.turn_on
+                target:
+                  entity_id: !input automazioni_extra
+
+          # Notifiche Interattive (se selezionate)
+          - if:
+              - "{{ notifiche_interattive_dispositivi != [] }}"
+            then:
+              - repeat:
+                  for_each: !input notifiche_interattive_dispositivi
+                  sequence:
+                    - service: notify.mobile_app
+                      data:
+                        target: "{{ repeat.item }}"
+                        title: Casa vuota
+                        message: !input notifiche_interattive_testo
+                        # Aggiungiamo il blocco 'actions' solo se 'notifiche_interattive_bottone_titolo' è stato fornito
+                        {% if notifiche_interattive_bottone_titolo != "" %}
+                        data:
+                          actions:
+                            - action: "custom_home_alarm_action" # Questo è un ID interno dell'azione, non il titolo
+                              title: !input notifiche_interattive_bottone_titolo
+                        {% endif %}
+
+mode: single
