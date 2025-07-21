@@ -5,6 +5,7 @@ blueprint:
     al rientro o all'uscita, e quando nessuno è in casa (es. vacanza, serata fuori).
     Notifiche interattive supportate (Android/iOS).
   domain: automation
+
   input:
     persona_principale:
       name: Persona principale
@@ -49,7 +50,6 @@ blueprint:
 
     cancello_device_name:
       name: Nome dispositivo Broadlink (es. 'cancello')
-      description: Nome del dispositivo Broadlink RM Pro se usato (es. 'cancello')
       default: "cancello"
       selector:
         text:
@@ -183,52 +183,64 @@ action:
             entity_id: !input persona_principale
             state: not_home
         sequence:
-          - if:
-              - "{{ cancello_remote != [] }}"
-            then:
-              - service: remote.send_command
-                target:
-                  entity_id: !input cancello_remote
-                data:
-                  device: !input cancello_device_name
-                  command: !input cancello_command
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ cancello_remote | length > 0 }}"
+                sequence:
+                  - service: remote.send_command
+                    target:
+                      entity_id: !input cancello_remote
+                    data:
+                      device: !input cancello_device_name
+                      command: !input cancello_command
 
-          - if:
-              - "{{ allarme != [] }}"
-            then:
-              - service: alarm_control_panel.alarm_arm_away
-                target:
-                  entity_id: !input allarme
-                data:
-                  code: !input codice_allarme
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ allarme | length > 0 }}"
+                sequence:
+                  - service: alarm_control_panel.alarm_arm_away
+                    target:
+                      entity_id: !input allarme
+                    data:
+                      code: !input codice_allarme
 
-          - if:
-              - "{{ tapparelle != [] }}"
-            then:
-              - service: cover.close_cover
-                target:
-                  entity_id: !input tapparelle
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ tapparelle | length > 0 }}"
+                sequence:
+                  - service: cover.close_cover
+                    target:
+                      entity_id: !input tapparelle
 
-          - if:
-              - "{{ luci_spegnere != [] }}"
-            then:
-              - service: light.turn_off
-                target:
-                  entity_id: !input luci_spegnere
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ luci_spegnere | length > 0 }}"
+                sequence:
+                  - service: light.turn_off
+                    target:
+                      entity_id: !input luci_spegnere
 
-          - if:
-              - "{{ luci_accendere != [] }}"
-            then:
-              - service: light.turn_on
-                target:
-                  entity_id: !input luci_accendere
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ luci_accendere | length > 0 }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: !input luci_accendere
 
-          - if:
-              - "{{ automazioni_extra != [] }}"
-            then:
-              - service: homeassistant.turn_on
-                target:
-                  entity_id: !input automazioni_extra
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ automazioni_extra | length > 0 }}"
+                sequence:
+                  - service: homeassistant.turn_on
+                    target:
+                      entity_id: !input automazioni_extra
 
       - conditions:
           - condition: trigger
@@ -237,45 +249,55 @@ action:
             entity_id: !input persona_principale
             state: home
         sequence:
-          - if:
-              - "{{ cancello_remote != [] }}"
-            then:
-              - service: remote.send_command
-                target:
-                  entity_id: !input cancello_remote
-                data:
-                  device: !input cancello_device_name
-                  command: !input cancello_command
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ cancello_remote | length > 0 }}"
+                sequence:
+                  - service: remote.send_command
+                    target:
+                      entity_id: !input cancello_remote
+                    data:
+                      device: !input cancello_device_name
+                      command: !input cancello_command
 
-          - if:
-              - "{{ tapparelle != [] }}"
-            then:
-              - service: cover.open_cover
-                target:
-                  entity_id: !input tapparelle
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ tapparelle | length > 0 }}"
+                sequence:
+                  - service: cover.open_cover
+                    target:
+                      entity_id: !input tapparelle
 
-          - if:
-              - "{{ luci_accendere != [] }}"
-            then:
-              - service: light.turn_on
-                target:
-                  entity_id: !input luci_accendere
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ luci_accendere | length > 0 }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: !input luci_accendere
 
-          - if:
-              - "{{ allarme != [] }}"
-            then:
-              - service: alarm_control_panel.alarm_disarm
-                target:
-                  entity_id: !input allarme
-                data:
-                  code: !input codice_allarme
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ allarme | length > 0 }}"
+                sequence:
+                  - service: alarm_control_panel.alarm_disarm
+                    target:
+                      entity_id: !input allarme
+                    data:
+                      code: !input codice_allarme
 
-          - if:
-              - "{{ automazioni_extra != [] }}"
-            then:
-              - service: homeassistant.turn_on
-                target:
-                  entity_id: !input automazioni_extra
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ automazioni_extra | length > 0 }}"
+                sequence:
+                  - service: homeassistant.turn_on
+                    target:
+                      entity_id: !input automazioni_extra
 
       - conditions:
           - condition: trigger
@@ -283,80 +305,92 @@ action:
           - condition: or
             conditions:
               - condition: template
-                value_template: "{{ sensore_porte == [] }}"
+                value_template: "{{ sensore_porte | length == 0 }}"
               - condition: numeric_state
                 entity_id: !input sensore_porte
                 below: 1
           - condition: or
             conditions:
               - condition: template
-                value_template: "{{ sensore_finestre == [] }}"
+                value_template: "{{ sensore_finestre | length == 0 }}"
               - condition: numeric_state
                 entity_id: !input sensore_finestre
                 below: 1
         sequence:
-          - if:
-              - "{{ allarme != [] }}"
-            then:
-              - service: alarm_control_panel.alarm_arm_away
-                target:
-                  entity_id: !input allarme
-                data:
-                  code: !input codice_allarme
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ allarme | length > 0 }}"
+                sequence:
+                  - service: alarm_control_panel.alarm_arm_away
+                    target:
+                      entity_id: !input allarme
+                    data:
+                      code: !input codice_allarme
 
-          - if:
-              - "{{ tapparelle != [] }}"
-            then:
-              - service: cover.close_cover
-                target:
-                  entity_id: !input tapparelle
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ tapparelle | length > 0 }}"
+                sequence:
+                  - service: cover.close_cover
+                    target:
+                      entity_id: !input tapparelle
 
-          - if:
-              - "{{ luci_spegnere != [] }}"
-            then:
-              - service: light.turn_off
-                target:
-                  entity_id: !input luci_spegnere
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ luci_spegnere | length > 0 }}"
+                sequence:
+                  - service: light.turn_off
+                    target:
+                      entity_id: !input luci_spegnere
 
-          - if:
-              - "{{ luci_accendere != [] }}"
-            then:
-              - service: light.turn_on
-                target:
-                  entity_id: !input luci_accendere
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ luci_accendere | length > 0 }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: !input luci_accendere
 
-          - if:
-              - "{{ automazioni_extra != [] }}"
-            then:
-              - service: homeassistant.turn_on
-                target:
-                  entity_id: !input automazioni_extra
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ automazioni_extra | length > 0 }}"
+                sequence:
+                  - service: homeassistant.turn_on
+                    target:
+                      entity_id: !input automazioni_extra
 
-          - if:
-              - "{{ notifiche_interattive_dispositivi != [] }}"
-            then:
-              - repeat:
-                  for_each: !input notifiche_interattive_dispositivi
-                  sequence:
-                    - choose:
-                        - conditions:
-                            - condition: template
-                              value_template: "{{ notifiche_interattive_bottone_titolo != '' }}"
-                          sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ notifiche_interattive_dispositivi | length > 0 }}"
+                sequence:
+                  - repeat:
+                      for_each: !input notifiche_interattive_dispositivi
+                      sequence:
+                        - choose:
+                            - conditions:
+                                - condition: template
+                                  value_template: "{{ notifiche_interattive_bottone_titolo != '' }}"
+                              sequence:
+                                - service: notify.mobile_app
+                                  data:
+                                    target: "{{ repeat.item }}"
+                                    title: Casa vuota
+                                    message: !input notifiche_interattive_testo
+                                    data:
+                                      actions:
+                                        - action: "custom_home_alarm_action"
+                                          title: !input notifiche_interattive_bottone_titolo
+                          default:
                             - service: notify.mobile_app
                               data:
                                 target: "{{ repeat.item }}"
                                 title: Casa vuota
                                 message: !input notifiche_interattive_testo
-                                data:
-                                  actions:
-                                    - action: "custom_home_alarm_action"
-                                      title: !input notifiche_interattive_bottone_titolo
-                      default:
-                        - service: notify.mobile_app
-                          data:
-                            target: "{{ repeat.item }}"
-                            title: Casa vuota
-                            message: !input notifiche_interattive_testo
 
 mode: single
