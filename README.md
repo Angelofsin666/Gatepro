@@ -23,13 +23,7 @@ al rientro, all'uscita o quando nessuno è in casa (es. vacanza o serata fuori).
 
 ## Import diretto in Home Assistant
 ### Importa il Blueprint direttamente in Home Assistant
-
-<p align="center">
-  <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Gatepro/main/gatepro.yaml" target="_blank">
-    <img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Importa il Blueprint" />
-  </a>
-</p>
-
+[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Gatepro/main/GatePro.yaml)
 ---
 
 Oppure copia il link diretto:
